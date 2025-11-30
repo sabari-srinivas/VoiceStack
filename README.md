@@ -6,7 +6,7 @@ A complete two-stage pipeline for converting spoken Indic languages into English
 
 This pipeline combines:
 1. **ASR (Automatic Speech Recognition)**: Converts Indic language audio → Native Indic script text using **IndicConformer**
-2. **NMT (Neural Machine Translation)**: Translates Indic text → English using **IndicTrans2**
+2. **NMT (Neural Machine Translation)**: Translates Indic text → English using **NLLB**
 
 ## ✨ Features
 
@@ -33,7 +33,7 @@ This pipeline combines:
 | `or` | Odia       | Odia        | ai4bharat/indicconformer_stt_or_hybrid_v2   |
 | `pa` | Punjabi    | Gurmukhi    | ai4bharat/indicconformer_stt_pa_hybrid_v2   |
 
-**NMT Model**: `ai4bharat/indictrans2-indic-en-1B` (shared across all languages)
+**NMT Model**: `facebook/nllb-200-1.3B` (shared across all languages)
 
 ## 🚀 Installation
 
@@ -139,7 +139,7 @@ ASR_MODEL_CONFIG = {
 
 # NMT settings
 NMT_MODEL_CONFIG = {
-    "model_name": "ai4bharat/indictrans2-indic-en-1B",
+    "model_name": "facebook/nllb-200-1.3B",
     "batch_size": 4,
     "max_length": 256,
 }
@@ -215,21 +215,6 @@ text = asr.transcribe('audio.wav')
 print(text)
 ```
 
-#### NMT Only
-```python
-from nmt_module import IndicTranslator
-
-translator = IndicTranslator(
-    model_name='ai4bharat/indictrans2-indic-en-1B',
-    device='cuda'
-)
-
-english = translator.translate(
-    text='हिंदी पाठ',
-    source_lang='hin_Deva'
-)
-print(english)
-```
 
 ## 🔍 Examples
 
@@ -281,10 +266,10 @@ python example_usage.py
 - **Input**: 16kHz mono audio
 - **Output**: Native Indic script text
 
-### NMT Model (IndicTrans2)
+### NMT Model (NLLB)
 - **Architecture**: Transformer-based Seq2Seq
 - **Training Data**: FLORES-200, Samanantar, BPCC
-- **Size**: 1B parameters
+- **Size**: 1.3B parameters
 - **Input**: Indic text with language tags
 - **Output**: English text
 
@@ -292,7 +277,7 @@ python example_usage.py
 
 This pipeline uses models from [AI4Bharat](https://ai4bharat.org/):
 - **IndicConformer**: [Paper](https://arxiv.org/abs/2301.01926)
-- **IndicTrans2**: [Paper](https://arxiv.org/abs/2305.16307)
+- **NLLB** (No Language Left Behind): [Paper](https://arxiv.org/abs/2207.04672)
 
 ## 📄 License
 
@@ -327,12 +312,6 @@ If you use this pipeline in research, please cite the AI4Bharat models:
   year={2023}
 }
 
-@article{gala2023indictrans2,
-  title={IndicTrans2: Towards High-Quality and Accessible Machine Translation Models for all 22 Scheduled Indian Languages},
-  author={Gala, Jay and others},
-  journal={arXiv preprint arXiv:2305.16307},
-  year={2023}
-}
 ```
 
 ---
