@@ -63,7 +63,7 @@ function App() {
 
                     <div className="info-badge">
                         <Info size={16} />
-                        <span>10 Languages Supported</span>
+                        <span>11 Languages Supported</span>
                     </div>
                 </div>
             </header>

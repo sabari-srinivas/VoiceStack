@@ -78,6 +78,12 @@ SUPPORTED_LANGUAGES = {
         "asr_model": "ai4bharat/indic-conformer-600m-multilingual",
         "flores_code": "pan_Guru",
         "script": "Gurmukhi"
+    },
+    "en": {
+        "name": "English",
+        "asr_model": "openai/whisper-small",
+        "flores_code": "eng_Latn",
+        "script": "Latin"
     }
 }
 

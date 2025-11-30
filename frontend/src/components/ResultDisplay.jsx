@@ -13,20 +13,23 @@ function ResultDisplay({ result }) {
 
     const handleDownload = () => {
         const content = `
-Indic Speech Translation Result
+Speech Processing Result
 ================================
 
 Language: ${result.language.name} (${result.language.script})
 Filename: ${result.filename}
 Timestamp: ${new Date(result.timestamp).toLocaleString()}
 
-Original Transcription (${result.language.script}):
+Transcription (${result.language.script}):
 ${result.transcription}
 
-English Translation:
+${result.language.code !== 'en' && result.translation ? `English Translation:
 ${result.translation}
 
-Processing Time:
+` : ''}${result.refined_prompt ? `Refined Prompt:
+${result.refined_prompt}
+
+` : ''}Processing Time:
 - ASR: ${result.processing_time.asr}s
 - NMT: ${result.processing_time.nmt}s
 - Total: ${result.processing_time.total}s
@@ -36,7 +39,7 @@ Processing Time:
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `translation_${Date.now()}.txt`
+        a.download = `transcription_${Date.now()}.txt`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
@@ -49,7 +52,7 @@ Processing Time:
             <div className="result-header">
                 <CheckCircle size={32} className="success-icon" />
                 <div>
-                    <h2>Translation Complete!</h2>
+                    <h2>Processing Complete!</h2>
                     <p>Your audio has been successfully processed</p>
                 </div>
             </div>
@@ -72,12 +75,12 @@ Processing Time:
 
             {/* Two Column Layout */}
             <div className="results-grid">
-                {/* Left Column: Transcription & Translation */}
+                {/* Left Column: Transcription & Translation (if not English) */}
                 <div className="left-column">
                     {/* Transcription */}
                     <div className="result-section">
                         <div className="section-header">
-                            <h3>Original Transcription</h3>
+                            <h3>{result.language.code === 'en' ? 'Transcription' : 'Original Transcription'}</h3>
                             <span className="script-badge">{result.language.script}</span>
                         </div>
                         <div className="text-content transcription">
@@ -92,23 +95,25 @@ Processing Time:
                         </button>
                     </div>
 
-                    {/* Translation */}
-                    <div className="result-section highlight">
-                        <div className="section-header">
-                            <h3>English Translation</h3>
-                            <span className="script-badge">English</span>
+                    {/* Translation - Only show for non-English languages */}
+                    {result.language.code !== 'en' && result.translation && (
+                        <div className="result-section highlight">
+                            <div className="section-header">
+                                <h3>English Translation</h3>
+                                <span className="script-badge">English</span>
+                            </div>
+                            <div className="text-content translation">
+                                {result.translation}
+                            </div>
+                            <button
+                                className="copy-btn"
+                                onClick={() => handleCopy(result.translation)}
+                            >
+                                <Copy size={16} />
+                                <span>{copied ? 'Copied!' : 'Copy'}</span>
+                            </button>
                         </div>
-                        <div className="text-content translation">
-                            {result.translation}
-                        </div>
-                        <button
-                            className="copy-btn"
-                            onClick={() => handleCopy(result.translation)}
-                        >
-                            <Copy size={16} />
-                            <span>{copied ? 'Copied!' : 'Copy'}</span>
-                        </button>
-                    </div>
+                    )}
 
                     {/* Processing Stats */}
                     <div className="stats-grid">

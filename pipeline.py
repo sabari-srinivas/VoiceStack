@@ -73,13 +73,17 @@ class IndicSpeechToEnglishPipeline:
             sampling_rate=ASR_MODEL_CONFIG['sampling_rate']
         )
         
-        # Load NMT model
-        print("\n[2/2] Loading NMT Model")
-        self.nmt_model = IndicTranslator(
-            model_name=NMT_MODEL_CONFIG['model_name'],
-            device=self.device,
-            max_length=NMT_MODEL_CONFIG['max_length']
-        )
+        # Load NMT model only if not English
+        if self.language_code == 'en':
+            print("\n[2/2] Skipping NMT Model (English - no translation needed)")
+            self.nmt_model = None
+        else:
+            print("\n[2/2] Loading NMT Model")
+            self.nmt_model = IndicTranslator(
+                model_name=NMT_MODEL_CONFIG['model_name'],
+                device=self.device,
+                max_length=NMT_MODEL_CONFIG['max_length']
+            )
         
         print("\nAll models loaded successfully!")
     
@@ -107,8 +111,10 @@ class IndicSpeechToEnglishPipeline:
                 - language: Language information
                 - processing_time: Total processing time
         """
-        if not self.asr_model or not self.nmt_model:
+        if not self.asr_model:
             raise RuntimeError("Models not loaded. Call load_models() first.")
+        if not self.nmt_model and self.language_code != 'en':
+            raise RuntimeError("NMT model not loaded. Call load_models() first.")
         
         start_time = time.time()
         
@@ -134,22 +140,31 @@ class IndicSpeechToEnglishPipeline:
             print(f"   {indic_text[:200]}{'...' if len(indic_text) > 200 else ''}")
             print(f"\nASR Time: {asr_time:.2f}s")
         
-        # Stage 2: NMT (Indic Text to English)
-        print("\n" + "─" * 70)
-        print("STAGE 2: Neural Machine Translation (NMT)")
-        print("─" * 70)
-        
-        nmt_start = time.time()
-        english_text = self.nmt_model.translate_sentences(
-            indic_text,
-            source_lang=self.language_info['flores_code']
-        )
-        nmt_time = time.time() - nmt_start
-        
-        if verbose:
-            print(f"\nTranslated Text (English):")
-            print(f"   {english_text[:200]}{'...' if len(english_text) > 200 else ''}")
-            print(f"\nNMT Time: {nmt_time:.2f}s")
+        # Stage 2: NMT (Indic Text to English) - Skip for English
+        if self.language_code == 'en':
+            # For English, skip translation
+            print("\n" + "─" * 70)
+            print("STAGE 2: Neural Machine Translation (NMT) - SKIPPED (English)")
+            print("─" * 70)
+            english_text = indic_text
+            nmt_time = 0.0
+            print("\nUsing transcription directly as English text")
+        else:
+            print("\n" + "─" * 70)
+            print("STAGE 2: Neural Machine Translation (NMT)")
+            print("─" * 70)
+            
+            nmt_start = time.time()
+            english_text = self.nmt_model.translate_sentences(
+                indic_text,
+                source_lang=self.language_info['flores_code']
+            )
+            nmt_time = time.time() - nmt_start
+            
+            if verbose:
+                print(f"\nTranslated Text (English):")
+                print(f"   {english_text[:200]}{'...' if len(english_text) > 200 else ''}")
+                print(f"\nNMT Time: {nmt_time:.2f}s")
         
         total_time = time.time() - start_time
         

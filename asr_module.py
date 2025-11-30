@@ -8,7 +8,7 @@ import torchaudio
 import librosa
 import soundfile as sf
 import numpy as np
-from transformers import AutoModel
+from transformers import AutoModel, pipeline
 from typing import Optional, Union, Tuple
 import warnings
 warnings.filterwarnings('ignore')
@@ -36,18 +36,31 @@ class IndicASR:
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.sampling_rate = sampling_rate
         self.model_name = model_name
+        self.is_whisper = "whisper" in model_name.lower()
         
         print(f"Loading ASR model: {model_name}")
         print(f"Using device: {self.device}")
         
         try:
-            # Load IndicConformer model
-            self.model = AutoModel.from_pretrained(
-                model_name,
-                trust_remote_code=True
-            )
-            self.model.to(self.device)
-            self.model.eval()
+            if self.is_whisper:
+                # Load Whisper model using pipeline
+                print("Loading Whisper model...")
+                self.model = pipeline(
+                    "automatic-speech-recognition",
+                    model=model_name,
+                    device=0 if self.device == 'cuda' else -1
+                )
+                print("Whisper model loaded successfully!")
+            else:
+                # Load IndicConformer model
+                print("Loading IndicConformer model...")
+                self.model = AutoModel.from_pretrained(
+                    model_name,
+                    trust_remote_code=True
+                )
+                self.model.to(self.device)
+                self.model.eval()
+                print("IndicConformer model loaded successfully!")
             
             print("ASR model loaded successfully!")
             
@@ -150,21 +163,32 @@ class IndicASR:
         print(f"Transcribing audio with language: {language_code}...")
         
         try:
-            # Convert to torch tensor and add batch dimension
-            wav_tensor = torch.from_numpy(audio).float()
-            
-            # Ensure mono audio
-            if len(wav_tensor.shape) > 1:
-                wav_tensor = torch.mean(wav_tensor, dim=0, keepdim=True)
+            if self.is_whisper:
+                # Whisper transcription using pipeline
+                # Pass audio array directly to avoid ffmpeg dependency
+                # The pipeline expects a dict with 'raw' and 'sampling_rate'
+                result = self.model({
+                    "raw": audio,
+                    "sampling_rate": sr
+                })
+                transcription = result['text']
             else:
-                wav_tensor = wav_tensor.unsqueeze(0)
-            
-            # Move to device
-            wav_tensor = wav_tensor.to(self.device)
-            
-            # Perform ASR using IndicConformer's custom method
-            with torch.no_grad():
-                transcription = self.model(wav_tensor, language_code, decoding_type)
+                # IndicConformer transcription
+                # Convert to torch tensor and add batch dimension
+                wav_tensor = torch.from_numpy(audio).float()
+                
+                # Ensure mono audio
+                if len(wav_tensor.shape) > 1:
+                    wav_tensor = torch.mean(wav_tensor, dim=0, keepdim=True)
+                else:
+                    wav_tensor = wav_tensor.unsqueeze(0)
+                
+                # Move to device
+                wav_tensor = wav_tensor.to(self.device)
+                
+                # Perform ASR using IndicConformer's custom method
+                with torch.no_grad():
+                    transcription = self.model(wav_tensor, language_code, decoding_type)
             
             print(f"Transcription complete!")
             print(f"   Text length: {len(transcription)} characters")
