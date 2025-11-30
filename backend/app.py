@@ -31,7 +31,7 @@ from config import SUPPORTED_LANGUAGES
 from gemini_service import GeminiRefiner
 
 # Gemini API configuration
-GEMINI_API_KEY = "AIzaSyAAP-b7PVa9Hv-DcBvu79SZe9EhFeZdS_k"
+GEMINI_API_KEY = ""
 gemini_refiner = None
 
 try:
